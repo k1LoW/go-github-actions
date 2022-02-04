@@ -1,0 +1,5 @@
+name: Action for testing go-github-actions
+description: Run test
+runs:
+  using: docker
+  image: Dockerfile

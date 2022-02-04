@@ -59,10 +59,10 @@ func createContainerForArtifact(ctx context.Context, name string) error {
 
 func getArtifactURL() (string, error) {
 	if os.Getenv("ACTIONS_RUNTIME_URL") == "" {
-		return "", errors.New("env ACTIONS_RUNTIME_URL is not set")
+		return "", errors.New("env ACTIONS_RUNTIME_URL is only available from the context of an action")
 	}
 	if os.Getenv("GITHUB_RUN_ID") == "" {
-		return "", errors.New("env GITHUB_RUN_ID is not set")
+		return "", errors.New("env GITHUB_RUN_ID is only available from the context of an action")
 	}
 	return fmt.Sprintf("%s_apis/pipelines/workflows/%s/artifacts?api-version=%s", os.Getenv("ACTIONS_RUNTIME_URL"), os.Getenv("GITHUB_RUN_ID"), apiVersion), nil
 }

@@ -3,7 +3,7 @@ export CGO_ENABLED=1
 
 default: test
 
-ci: depsdev test sec
+ci: test
 
 test:
 	go test ./... -coverprofile=coverage.out -covermode=count
