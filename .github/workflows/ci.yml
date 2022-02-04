@@ -28,7 +28,7 @@ jobs:
         uses: reviewdog/action-golangci-lint@v2
 
       - name: Run tests
-        uses: ./testdata/
+        uses: ./
 
       - name: Run Trivy vulnerability scanner in repo mode
         uses: aquasecurity/trivy-action@master
