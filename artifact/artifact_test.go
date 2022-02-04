@@ -38,3 +38,13 @@ func TestCreateContainerForArtifact(t *testing.T) {
 		t.Errorf("got %v\nwant %v*", got.FileContainerResourceURL, want)
 	}
 }
+
+func TestUpload(t *testing.T) {
+	if os.Getenv("CI") == "" {
+		t.Skip("env CI is not set")
+	}
+	files := []string{"artifact_test.go"}
+	if err := Upload(context.TODO(), "TestUpload", files); err != nil {
+		t.Error(err)
+	}
+}
