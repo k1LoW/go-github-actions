@@ -8,8 +8,8 @@ import (
 )
 
 func TestGetArtifactURL(t *testing.T) {
-	if os.Getenv("CI") == "" {
-		t.Skip("env CI is not set")
+	if os.Getenv("GITHUB_ACTIONS") == "" {
+		t.Skip("Not running on GitHub Actions")
 	}
 	u, err := getArtifactURL()
 	if err != nil {
@@ -21,8 +21,8 @@ func TestGetArtifactURL(t *testing.T) {
 }
 
 func TestCreateContainerForArtifact(t *testing.T) {
-	if os.Getenv("CI") == "" {
-		t.Skip("env CI is not set")
+	if os.Getenv("GITHUB_ACTIONS") == "" {
+		t.Skip("Not running on GitHub Actions")
 	}
 	got, err := createContainerForArtifact(context.TODO(), "TestCreateContainerForArtifact")
 	if err != nil {
@@ -39,12 +39,14 @@ func TestCreateContainerForArtifact(t *testing.T) {
 	}
 }
 
-func TestUpload(t *testing.T) {
-	if os.Getenv("CI") == "" {
-		t.Skip("env CI is not set")
+func TestUploadFiles(t *testing.T) {
+	if os.Getenv("GITHUB_ACTIONS") == "" {
+		t.Skip("Not running on GitHub Actions")
 	}
-	files := []string{"artifact_test.go"}
-	if err := Upload(context.TODO(), "TestUpload", files); err != nil {
+	files := []string{
+		"testdata/test.txt",
+	}
+	if err := UploadFiles(context.TODO(), "TestUploadFiles", files); err != nil {
 		t.Error(err)
 	}
 }
