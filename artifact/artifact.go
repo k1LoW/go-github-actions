@@ -41,6 +41,7 @@ func createContainerForArtifact(ctx context.Context, name string) error {
 	}
 	req.Header.Set("Accept", fmt.Sprintf("application/json;api-version=%s", apiVersion))
 	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", os.Getenv("ACTIONS_RUNTIME_TOKEN")))
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
