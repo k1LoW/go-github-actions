@@ -24,7 +24,17 @@ func TestCreateContainerForArtifact(t *testing.T) {
 	if os.Getenv("CI") == "" {
 		t.Skip("env CI is not set")
 	}
-	createContainerForArtifact(context.TODO(), "TestCreateContainerForArtifact")
-
-	t.Fatal(1)
+	got, err := createContainerForArtifact(context.TODO(), "TestCreateContainerForArtifact")
+	if err != nil {
+		t.Error(err)
+	}
+	if want := "actions_storage"; got.Type != want {
+		t.Errorf("got %v\nwant %v", got.Name, want)
+	}
+	if want := "TestCreateContainerForArtifact"; got.Name != want {
+		t.Errorf("got %v\nwant %v", got.Name, want)
+	}
+	if want := "https://pipelines.actions.githubusercontent.com/"; !strings.HasPrefix(got.FileContainerResourceURL, want) {
+		t.Errorf("got %v\nwant %v*", got.FileContainerResourceURL, want)
+	}
 }

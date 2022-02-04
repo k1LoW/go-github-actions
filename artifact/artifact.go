@@ -1,6 +1,7 @@
 package artifact
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -8,20 +9,32 @@ import (
 	"io"
 	"net/http"
 	"os"
-	"strings"
+	"time"
 )
 
 const apiVersion = "6.0-preview"
 
 func Upload(ctx context.Context, name string, r io.Reader) error {
-	err := createContainerForArtifact(ctx, name)
+	_, err := createContainerForArtifact(ctx, name)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func createContainerForArtifact(ctx context.Context, name string) error {
+type CreateContainerResponce struct {
+	ContainerID              int         `json:"containerId"`
+	Size                     int         `json:"size"`
+	SignedContent            interface{} `json:"signedContent"`
+	FileContainerResourceURL string      `json:"fileContainerResourceUrl"`
+	Type                     string      `json:"type"`
+	Name                     string      `json:"name"`
+	URL                      string      `json:"url"`
+	ExpiresOn                time.Time   `json:"expiresOn"`
+	Items                    interface{} `json:"items"`
+}
+
+func createContainerForArtifact(ctx context.Context, name string) (*CreateContainerResponce, error) {
 	param := map[string]string{
 		"Type": "actions_storage",
 		"Name": name,
@@ -29,21 +42,21 @@ func createContainerForArtifact(ctx context.Context, name string) error {
 
 	u, err := getArtifactURL()
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	b, err := json.Marshal(&param)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	req, err := http.NewRequest(
 		"POST",
 		u,
-		strings.NewReader(string(b)),
+		bytes.NewReader(b),
 	)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	req.Header.Set("Accept", fmt.Sprintf("application/json;api-version=%s", apiVersion))
 	req.Header.Set("Content-Type", "application/json")
@@ -52,16 +65,20 @@ func createContainerForArtifact(ctx context.Context, name string) error {
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	defer resp.Body.Close()
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	fmt.Printf("%s\n", string(body))
 
-	return nil
+	res := &CreateContainerResponce{}
+	if err := json.Unmarshal(body, res); err != nil {
+		return nil, err
+	}
+
+	return res, nil
 }
 
 func getArtifactURL() (string, error) {
