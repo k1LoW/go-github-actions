@@ -2,11 +2,11 @@ package artifact
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"net/http"
-	"net/url"
 	"os"
 	"strings"
 )
@@ -22,11 +22,17 @@ func Upload(ctx context.Context, name string, r io.Reader) error {
 }
 
 func createContainerForArtifact(ctx context.Context, name string) error {
-	values := url.Values{}
-	values.Set("Type", "actions_storage")
-	values.Add("Name", name)
+	param := map[string]string{
+		"Type": "actions_storage",
+		"Name": name,
+	}
 
 	u, err := getArtifactURL()
+	if err != nil {
+		return err
+	}
+
+	b, err := json.Marshal(&param)
 	if err != nil {
 		return err
 	}
@@ -34,7 +40,7 @@ func createContainerForArtifact(ctx context.Context, name string) error {
 	req, err := http.NewRequest(
 		"POST",
 		u,
-		strings.NewReader(values.Encode()),
+		strings.NewReader(string(b)),
 	)
 	if err != nil {
 		return err
