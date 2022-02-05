@@ -52,8 +52,14 @@ func TestUploadLargeContent(t *testing.T) {
 	if os.Getenv("GITHUB_ACTIONS") == "" {
 		t.Skip("Not running on GitHub Actions")
 	}
-	s := strings.Repeat("s", 1024*1024*50)
-	if err := Upload(context.TODO(), "TestUploadLargeContent", "artifact/testdata/large.txt", strings.NewReader(s)); err != nil {
+	const (
+		owner = "k1LoW"
+		repo  = "go-github-actions"
+	)
+	ctx := context.TODO()
+	s := strings.Repeat("0123456789\n", 1024*1024*10)
+	name := "TestUploadLargeContent"
+	if err := Upload(ctx, name, "artifact/testdata/large.txt", strings.NewReader(s)); err != nil {
 		t.Error(err)
 	}
 }
