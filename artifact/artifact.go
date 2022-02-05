@@ -15,6 +15,7 @@ import (
 )
 
 const apiVersion = "6.0-preview"
+const uploadChunkSize = 8 * 1024 * 1024 // 8 MB
 
 func Upload(ctx context.Context, name, fp string, content io.Reader) error {
 	c, err := createContainerForArtifact(ctx, name)
