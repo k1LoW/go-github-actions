@@ -21,6 +21,17 @@ jobs:
       - name: Run tests
         uses: ./
 
+      - name: Check TestUploadFiles 1
+        run: rm artifact/testdata/test.txt artifact/testdata/test2.txt
+
+      - name: Check TestUploadFiles 2
+        uses: actions/download-artifact@v2
+        with:
+          name: TestUploadFiles
+
+      - name: Check TestUploadFiles 3
+        run: cat artifact/testdata/test.txt artifact/testdata/test2.txt
+
       - name: Run Trivy vulnerability scanner in repo mode
         uses: aquasecurity/trivy-action@master
         with:

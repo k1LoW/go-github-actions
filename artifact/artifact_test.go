@@ -45,6 +45,7 @@ func TestUploadFiles(t *testing.T) {
 	}
 	files := []string{
 		"testdata/test.txt",
+		"testdata/test2.txt",
 	}
 	if err := UploadFiles(context.TODO(), "TestUploadFiles", files); err != nil {
 		t.Error(err)
