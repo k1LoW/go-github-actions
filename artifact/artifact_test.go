@@ -51,3 +51,12 @@ func TestUploadFiles(t *testing.T) {
 		t.Error(err)
 	}
 }
+
+func TestUpload(t *testing.T) {
+	if os.Getenv("GITHUB_ACTIONS") == "" {
+		t.Skip("Not running on GitHub Actions")
+	}
+	if err := Upload(context.TODO(), "TestUpload", "testdata/test3.txt", strings.NewReader("hello artifact 3\n")); err != nil {
+		t.Error(err)
+	}
+}
