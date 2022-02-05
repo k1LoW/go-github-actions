@@ -81,7 +81,7 @@ func createContainerForArtifact(ctx context.Context, name string) (*containerRes
 	}
 
 	req, err := http.NewRequest(
-		"POST",
+		http.MethodPost,
 		u,
 		bytes.NewReader(b),
 	)
@@ -130,6 +130,10 @@ func upload(ctx context.Context, name, ep, fp string, content io.Reader) (int, e
 		u.String(),
 		body,
 	)
+	if err != nil {
+		return 0, err
+	}
+
 	req.Header.Set("Accept", fmt.Sprintf("application/json;api-version=%s", apiVersion))
 	req.Header.Set("Content-Type", "application/octet-stream")
 	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", os.Getenv("ACTIONS_RUNTIME_TOKEN")))
@@ -177,6 +181,9 @@ func patchArtifactSize(ctx context.Context, name string, size int) error {
 		u.String(),
 		bytes.NewReader(b),
 	)
+	if err != nil {
+		return err
+	}
 
 	req.Header.Set("Accept", fmt.Sprintf("application/json;api-version=%s", apiVersion))
 	req.Header.Set("Content-Type", "application/json")
@@ -207,16 +214,20 @@ func uploadFiles(ctx context.Context, name, ep string, files []string) (int, err
 			return 0, err
 		}
 
-		file, err := os.Open(f)
+		file, err := os.Open(filepath.Clean(f))
 		if err != nil {
 			return 0, err
 		}
-		defer file.Close()
 		size, err := upload(ctx, name, ep, rel, file)
 		if err != nil {
+			_ = file.Close()
 			return 0, err
 		}
 		total += size
+		if err := file.Close(); err != nil {
+			return 0, err
+		}
+
 	}
 	return total, nil
 }
