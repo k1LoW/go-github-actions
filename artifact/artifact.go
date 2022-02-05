@@ -16,24 +16,6 @@ import (
 
 const apiVersion = "6.0-preview"
 
-func UploadFiles(ctx context.Context, name string, files []string) error {
-	c, err := createContainerForArtifact(ctx, name)
-	if err != nil {
-		return err
-	}
-
-	total, err := uploadFiles(ctx, name, c.FileContainerResourceURL, files)
-	if err != nil {
-		return err
-	}
-
-	if err := patchArtifactSize(ctx, name, total); err != nil {
-		return err
-	}
-
-	return nil
-}
-
 func Upload(ctx context.Context, name, fp string, content io.Reader) error {
 	c, err := createContainerForArtifact(ctx, name)
 	if err != nil {
@@ -46,6 +28,24 @@ func Upload(ctx context.Context, name, fp string, content io.Reader) error {
 	}
 
 	if err := patchArtifactSize(ctx, name, size); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func UploadFiles(ctx context.Context, name string, files []string) error {
+	c, err := createContainerForArtifact(ctx, name)
+	if err != nil {
+		return err
+	}
+
+	total, err := uploadFiles(ctx, name, c.FileContainerResourceURL, files)
+	if err != nil {
+		return err
+	}
+
+	if err := patchArtifactSize(ctx, name, total); err != nil {
 		return err
 	}
 

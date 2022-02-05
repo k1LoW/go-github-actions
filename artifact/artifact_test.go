@@ -39,24 +39,24 @@ func TestCreateContainerForArtifact(t *testing.T) {
 	}
 }
 
+func TestUpload(t *testing.T) {
+	if os.Getenv("GITHUB_ACTIONS") == "" {
+		t.Skip("Not running on GitHub Actions")
+	}
+	if err := Upload(context.TODO(), "TestUpload", "artifact/testdata/test.txt", strings.NewReader("hello artifact 3\n")); err != nil {
+		t.Error(err)
+	}
+}
+
 func TestUploadFiles(t *testing.T) {
 	if os.Getenv("GITHUB_ACTIONS") == "" {
 		t.Skip("Not running on GitHub Actions")
 	}
 	files := []string{
-		"testdata/test.txt",
 		"testdata/test2.txt",
+		"testdata/test3.txt",
 	}
 	if err := UploadFiles(context.TODO(), "TestUploadFiles", files); err != nil {
-		t.Error(err)
-	}
-}
-
-func TestUpload(t *testing.T) {
-	if os.Getenv("GITHUB_ACTIONS") == "" {
-		t.Skip("Not running on GitHub Actions")
-	}
-	if err := Upload(context.TODO(), "TestUpload", "testdata/test3.txt", strings.NewReader("hello artifact 3\n")); err != nil {
 		t.Error(err)
 	}
 }
