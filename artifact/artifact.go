@@ -17,6 +17,7 @@ import (
 const apiVersion = "6.0-preview"
 const uploadChunkSize = 8 * 1024 * 1024 // 8 MB
 
+// Upload content as GitHub Actions artifact
 func Upload(ctx context.Context, name, fp string, content io.Reader) error {
 	c, err := createContainerForArtifact(ctx, name)
 	if err != nil {
@@ -35,6 +36,7 @@ func Upload(ctx context.Context, name, fp string, content io.Reader) error {
 	return nil
 }
 
+// UploadFiles as GitHub Actions artifact
 func UploadFiles(ctx context.Context, name string, files []string) error {
 	c, err := createContainerForArtifact(ctx, name)
 	if err != nil {
@@ -126,20 +128,11 @@ func upload(ctx context.Context, name, ep, fp string, content io.Reader) (int, e
 		return 0, err
 	}
 	size := body.Len()
-	req, err := http.NewRequest(
-		http.MethodPut,
-		u.String(),
-		body,
-	)
+
+	req, err := createRequest(u, 0, size-1, size, body)
 	if err != nil {
 		return 0, err
 	}
-
-	req.Header.Set("Accept", fmt.Sprintf("application/json;api-version=%s", apiVersion))
-	req.Header.Set("Content-Type", "application/octet-stream")
-	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", os.Getenv("ACTIONS_RUNTIME_TOKEN")))
-	req.Header.Set("Content-Length", fmt.Sprintf("%d", body.Len()))
-	req.Header.Set("Content-Range", fmt.Sprintf("bytes 0-%d/%d", body.Len()-1, body.Len()))
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
@@ -231,6 +224,25 @@ func uploadFiles(ctx context.Context, name, ep string, files []string) (int, err
 
 	}
 	return total, nil
+}
+
+func createRequest(u *url.URL, start, end, max int, b io.Reader) (*http.Request, error) {
+	req, err := http.NewRequest(
+		http.MethodPut,
+		u.String(),
+		b,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Set("Accept", fmt.Sprintf("application/json;api-version=%s", apiVersion))
+	req.Header.Set("Content-Type", "application/octet-stream")
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", os.Getenv("ACTIONS_RUNTIME_TOKEN")))
+	req.Header.Set("Content-Length", fmt.Sprintf("%d", end-start+1))
+	req.Header.Set("Content-Range", fmt.Sprintf("bytes %d-%d/%d", start, end, max))
+
+	return req, nil
 }
 
 func getArtifactURL() (string, error) {
