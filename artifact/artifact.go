@@ -100,7 +100,6 @@ func createContainerForArtifact(ctx context.Context, name string) (*containerRes
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
@@ -127,26 +126,44 @@ func upload(ctx context.Context, name, ep, fp string, content io.Reader) (int, e
 	if _, err = io.Copy(body, content); err != nil {
 		return 0, err
 	}
-	size := body.Len()
-
-	req, err := createRequest(u, 0, size-1, size, body)
-	if err != nil {
-		return 0, err
-	}
-
+	max := body.Len()
+	buf := make([]byte, 0, uploadChunkSize)
+	start := 0
 	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		return 0, err
+	for {
+		n, err := body.Read(buf[:cap(buf)])
+		buf = buf[:n]
+		if n == 0 {
+			if err == nil {
+				continue
+			}
+			if err == io.EOF {
+				break
+			}
+			return 0, err
+		}
+		end := start + n - 1
+		req, err := createRequest(u, start, end, max, bytes.NewReader(buf))
+		if err != nil {
+			return 0, err
+		}
+		resp, err := client.Do(req)
+		if err != nil {
+			return 0, err
+		}
+		if _, err := io.ReadAll(resp.Body); err != nil {
+			return 0, err
+		}
+		if resp.StatusCode != http.StatusCreated && resp.StatusCode != http.StatusAccepted {
+			return 0, errors.New(resp.Status)
+		}
+		start = start + n
+		if err != nil && err != io.EOF {
+			return 0, err
+		}
 	}
-	defer resp.Body.Close()
-	if _, err := io.ReadAll(resp.Body); err != nil {
-		return 0, err
-	}
-	if resp.StatusCode != http.StatusCreated {
-		return 0, errors.New(resp.Status)
-	}
-	return size, nil
+
+	return max, nil
 }
 
 func patchArtifactSize(ctx context.Context, name string, size int) error {
@@ -188,7 +205,6 @@ func patchArtifactSize(ctx context.Context, name string, size int) error {
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
 	if _, err := io.ReadAll(resp.Body); err != nil {
 		return err
 	}
