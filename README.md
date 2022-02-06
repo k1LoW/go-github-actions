@@ -1,3 +1,3 @@
 # go-github-actions
 
- Package for developing GitHub Actions.
+:octocat: `go-github-actions` is a package for developing GitHub Actions.
