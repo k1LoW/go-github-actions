@@ -48,7 +48,7 @@ jobs:
                   exit 1
                 end
               end
-              unless f.lineno == 1024 * 1024 * 100
+              unless f.lineno == 1024 * 1024 * 10
                 puts f.lineno
                 exit 1
               end
