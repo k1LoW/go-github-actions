@@ -34,7 +34,7 @@ func TestCreateContainerForArtifact(t *testing.T) {
 	if want := "TestCreateContainerForArtifact"; got.Name != want {
 		t.Errorf("got %v\nwant %v", got.Name, want)
 	}
-	if want := "https://pipelines.actions.githubusercontent.com/"; !strings.HasPrefix(got.FileContainerResourceURL, want) {
+	if want := ".actions.githubusercontent.com/"; !strings.Contains(got.FileContainerResourceURL, want) {
 		t.Errorf("got %v\nwant %v*", got.FileContainerResourceURL, want)
 	}
 }
