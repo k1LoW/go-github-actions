@@ -27,20 +27,20 @@ jobs:
       - name: Run tests ( upload contents )
         uses: ./testdata/
 
-      - name: Test TestUpload (1/2)
+      - name: Test TestUploadLegacy (1/2)
         uses: actions/download-artifact@v3
         with:
-          name: TestUpload
+          name: TestUploadLegacy
 
-      - name: Test TestUpload (2/2)
+      - name: Test TestUploadLegacy (2/2)
         run: cat artifact/testdata/test.txt
 
-      - name: Test TestUploadLargeContent (1/2)
+      - name: Test TestUploadLargeContentLegacy (1/2)
         uses: actions/download-artifact@v3
         with:
-          name: TestUploadLargeContent
+          name: TestUploadLargeContentLegacy
 
-      - name: Test TestUploadLargeContent (2/2)
+      - name: Test TestUploadLargeContentLegacy (2/2)
         uses: k1LoW/github-script-ruby@v2
         with:
           script: |
@@ -57,15 +57,15 @@ jobs:
               end
             end
 
-      - name: Test TestUploadFiles (1/3)
+      - name: Test TestUploadFilesLegacy (1/3)
         run: rm artifact/testdata/test2.txt artifact/testdata/test3.txt
 
-      - name: Test TestUploadFiles (2/3)
+      - name: Test TestUploadFilesLegacy (2/3)
         uses: actions/download-artifact@v3
         with:
-          name: TestUploadFiles
+          name: TestUploadFilesLegacy
 
-      - name: Test TestUploadFiles (3/3)
+      - name: Test TestUploadFilesLegacy (3/3)
         run: cat artifact/testdata/test2.txt artifact/testdata/test3.txt
 
       - name: Cleanup artifacts
