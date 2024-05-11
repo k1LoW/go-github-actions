@@ -52,10 +52,6 @@ func TestUploadLargeContent(t *testing.T) {
 	if os.Getenv("GITHUB_ACTIONS") == "" {
 		t.Skip("Not running on GitHub Actions")
 	}
-	const (
-		owner = "k1LoW"
-		repo  = "go-github-actions"
-	)
 	ctx := context.TODO()
 	s := strings.Repeat("0123456789\n", 1024*1024*10)
 	name := "TestUploadLargeContentLegacy"

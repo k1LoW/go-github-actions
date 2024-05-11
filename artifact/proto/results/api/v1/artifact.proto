@@ -1,0 +1,37 @@
+syntax = "proto3";
+
+package github.actions.results.api.v1;
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/wrappers.proto";
+
+service ArtifactService {
+  rpc CreateArtifact(CreateArtifactRequest) returns (CreateArtifactResponse);
+  rpc FinalizeArtifact(FinalizeArtifactRequest) returns (FinalizeArtifactResponse);
+}
+
+message CreateArtifactRequest {
+  string workflow_run_backend_id = 1;
+  string workflow_job_run_backend_id = 2;
+  string name = 3;
+  google.protobuf.Timestamp expires_at = 4;
+  int32 version = 5;
+}
+
+message CreateArtifactResponse {
+  bool ok = 1;
+  string signed_upload_url = 2;
+}
+
+message FinalizeArtifactRequest {
+  string workflow_run_backend_id = 1;
+  string workflow_job_run_backend_id = 2;
+  string name = 3;
+  int64 size = 4;
+  google.protobuf.StringValue hash = 5;
+}
+
+message FinalizeArtifactResponse {
+  bool ok = 1;
+  int64 artifact_id = 2;
+}

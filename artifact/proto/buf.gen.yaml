@@ -1,0 +1,15 @@
+version: v1
+managed:
+  enabled: true
+  go_package_prefix:
+    default: github.com/k1LoW/go-github-actions/artifact/proto/gen/go
+plugins:
+  - name: go
+    out: gen/go
+    opt: paths=source_relative
+  - name: go-grpc
+    out: gen/go
+    opt: paths=source_relative
+  - name: connect-go
+    out: gen/go
+    opt: paths=source_relative
