@@ -1,4 +1,4 @@
-package artifact
+package legacy
 
 import (
 	"context"
@@ -69,8 +69,8 @@ func TestUploadFiles(t *testing.T) {
 		t.Skip("Not running on GitHub Actions")
 	}
 	files := []string{
-		"testdata/test2.txt",
-		"testdata/test3.txt",
+		"../testdata/test2.txt",
+		"../testdata/test3.txt",
 	}
 	if err := UploadFiles(context.TODO(), "TestUploadFiles", files); err != nil {
 		t.Error(err)

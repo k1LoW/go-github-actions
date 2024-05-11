@@ -24,7 +24,7 @@ jobs:
       - name: Run lint
         uses: reviewdog/action-golangci-lint@v2
 
-      - name: Run tests
+      - name: Run tests ( upload contents )
         uses: ./testdata/
 
       - name: Test TestUpload (1/2)
