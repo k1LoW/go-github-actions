@@ -16,7 +16,7 @@ import (
 	"github.com/lestrrat-go/jwx/v2/jwt"
 )
 
-// Upload content as GitHub Actions artifact
+// Upload content as GitHub Actions artifact.
 func Upload(ctx context.Context, name, fp string, content io.Reader) error {
 	if useLegacy() {
 		return legacy.Upload(ctx, name, fp, content)
@@ -89,7 +89,7 @@ func Upload(ctx context.Context, name, fp string, content io.Reader) error {
 	return nil
 }
 
-// UploadFiles as GitHub Actions artifact
+// UploadFiles as GitHub Actions artifact.
 func UploadFiles(ctx context.Context, name string, files []string) error {
 	if useLegacy() {
 		return legacy.UploadFiles(ctx, name, files)

@@ -17,7 +17,7 @@ import (
 const apiVersion = "6.0-preview"
 const uploadChunkSize = 8 * 1024 * 1024 // 8 MB
 
-// Upload content as GitHub Actions artifact
+// Upload content as GitHub Actions artifact.
 func Upload(ctx context.Context, name, fp string, content io.Reader) error {
 	c, err := createContainerForArtifact(ctx, name)
 	if err != nil {
@@ -36,7 +36,7 @@ func Upload(ctx context.Context, name, fp string, content io.Reader) error {
 	return nil
 }
 
-// UploadFiles as GitHub Actions artifact
+// UploadFiles as GitHub Actions artifact.
 func UploadFiles(ctx context.Context, name string, files []string) error {
 	c, err := createContainerForArtifact(ctx, name)
 	if err != nil {
@@ -137,7 +137,7 @@ func upload(ctx context.Context, name, ep, fp string, content io.Reader) (int, e
 			if err == nil {
 				continue
 			}
-			if err == io.EOF {
+			if errors.Is(err, io.EOF) {
 				break
 			}
 			return 0, err
@@ -158,7 +158,7 @@ func upload(ctx context.Context, name, ep, fp string, content io.Reader) (int, e
 			return 0, errors.New(resp.Status)
 		}
 		start = start + n
-		if err != nil && err != io.EOF {
+		if err != nil && !errors.Is(err, io.EOF) {
 			return 0, err
 		}
 	}
