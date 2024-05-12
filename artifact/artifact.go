@@ -1,36 +1,89 @@
 package artifact
 
 import (
+	"archive/zip"
 	"bytes"
 	"context"
-	"encoding/json"
 	"errors"
-	"fmt"
 	"io"
-	"net/http"
-	"net/url"
 	"os"
 	"path/filepath"
-	"time"
-)
+	"strings"
 
-const apiVersion = "6.0-preview"
-const uploadChunkSize = 8 * 1024 * 1024 // 8 MB
+	"connectrpc.com/connect"
+	"github.com/k1LoW/go-github-actions/artifact/legacy"
+	apiv1 "github.com/k1LoW/go-github-actions/artifact/proto/gen/go/results/api/v1"
+	"github.com/lestrrat-go/jwx/v2/jwt"
+)
 
 // Upload content as GitHub Actions artifact
 func Upload(ctx context.Context, name, fp string, content io.Reader) error {
-	c, err := createContainerForArtifact(ctx, name)
+	if useLegacy() {
+		return legacy.Upload(ctx, name, fp, content)
+	}
+
+	ids, err := getBackendIdsFromToken()
 	if err != nil {
 		return err
 	}
-
-	size, err := upload(ctx, name, c.FileContainerResourceURL, fp, content)
+	apic, err := newAPIClient()
 	if err != nil {
 		return err
 	}
+	req := connect.NewRequest(&apiv1.CreateArtifactRequest{
+		WorkflowRunBackendId:    ids.workflowRunBackendId,
+		WorkflowJobRunBackendId: ids.workflowJobRunBackendId,
+		Name:                    name,
+		Version:                 4,
+	})
 
-	if err := patchArtifactSize(ctx, name, size); err != nil {
+	res, err := apic.CreateArtifact(ctx, req)
+	if err != nil {
 		return err
+	}
+	if !res.Msg.GetOk() {
+		return errors.New("response is not ok")
+	}
+
+	var size int64
+	{
+		buf := new(bytes.Buffer)
+		zw := zip.NewWriter(buf)
+		h := &zip.FileHeader{
+			Name:   fp,
+			Method: zip.Deflate,
+		}
+		w, err := zw.CreateHeader(h)
+		if err != nil {
+			return err
+		}
+		if _, err := io.Copy(w, content); err != nil {
+			return err
+		}
+		if err := zw.Close(); err != nil {
+			return err
+		}
+		if err := upload(ctx, res.Msg.GetSignedUploadUrl(), buf); err != nil {
+			return err
+		}
+		size = int64(buf.Len())
+	}
+
+	{
+		req := connect.NewRequest(&apiv1.FinalizeArtifactRequest{
+			WorkflowRunBackendId:    ids.workflowRunBackendId,
+			WorkflowJobRunBackendId: ids.workflowJobRunBackendId,
+			Name:                    name,
+			Size:                    size,
+		})
+
+		res, err := apic.FinalizeArtifact(ctx, req)
+		if err != nil {
+			return err
+		}
+		if !res.Msg.GetOk() {
+			return errors.New("response is not ok")
+		}
 	}
 
 	return nil
@@ -38,235 +91,164 @@ func Upload(ctx context.Context, name, fp string, content io.Reader) error {
 
 // UploadFiles as GitHub Actions artifact
 func UploadFiles(ctx context.Context, name string, files []string) error {
-	c, err := createContainerForArtifact(ctx, name)
+	if useLegacy() {
+		return legacy.UploadFiles(ctx, name, files)
+	}
+
+	ids, err := getBackendIdsFromToken()
 	if err != nil {
 		return err
 	}
-
-	total, err := uploadFiles(ctx, name, c.FileContainerResourceURL, files)
+	apic, err := newAPIClient()
 	if err != nil {
 		return err
 	}
+	req := connect.NewRequest(&apiv1.CreateArtifactRequest{
+		WorkflowRunBackendId:    ids.workflowRunBackendId,
+		WorkflowJobRunBackendId: ids.workflowJobRunBackendId,
+		Name:                    name,
+		Version:                 4,
+	})
 
-	if err := patchArtifactSize(ctx, name, total); err != nil {
+	res, err := apic.CreateArtifact(ctx, req)
+	if err != nil {
 		return err
+	}
+	if !res.Msg.GetOk() {
+		return errors.New("response is not ok")
+	}
+
+	var size int64
+	{
+		buf := new(bytes.Buffer)
+		zw := zip.NewWriter(buf)
+		for _, fp := range files {
+			if err := func() error {
+				a, err := filepath.Abs(fp)
+				if err != nil {
+					return err
+				}
+				rel, err := filepath.Rel(os.Getenv("GITHUB_WORKSPACE"), a)
+				if err != nil {
+					return err
+				}
+				f, err := os.Open(fp)
+				if err != nil {
+					return err
+				}
+				defer f.Close()
+				fi, err := f.Stat()
+				if err != nil {
+					return err
+				}
+				h, err := zip.FileInfoHeader(fi)
+				if err != nil {
+					return err
+				}
+				h.Name = rel
+				h.Method = zip.Deflate
+				w, err := zw.CreateHeader(h)
+				if err != nil {
+					return err
+				}
+				if _, err := io.Copy(w, f); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return err
+			}
+		}
+		if err := zw.Close(); err != nil {
+			return err
+		}
+		if err := upload(ctx, res.Msg.GetSignedUploadUrl(), buf); err != nil {
+			return err
+		}
+		size = int64(buf.Len())
+	}
+
+	{
+		req := connect.NewRequest(&apiv1.FinalizeArtifactRequest{
+			WorkflowRunBackendId:    ids.workflowRunBackendId,
+			WorkflowJobRunBackendId: ids.workflowJobRunBackendId,
+			Name:                    name,
+			Size:                    size,
+		})
+
+		res, err := apic.FinalizeArtifact(ctx, req)
+		if err != nil {
+			return err
+		}
+		if !res.Msg.GetOk() {
+			return errors.New("response is not ok")
+		}
 	}
 
 	return nil
 }
 
-type containerResponce struct {
-	ContainerID              int         `json:"containerId"`
-	Size                     int         `json:"size"`
-	SignedContent            interface{} `json:"signedContent"`
-	FileContainerResourceURL string      `json:"fileContainerResourceUrl"`
-	Type                     string      `json:"type"`
-	Name                     string      `json:"name"`
-	URL                      string      `json:"url"`
-	ExpiresOn                time.Time   `json:"expiresOn"`
-	Items                    interface{} `json:"items"`
+func useLegacy() bool {
+	if isGHES() {
+		return true
+	}
+	if os.Getenv("ACTIONS_USE_LEGACY_ARTIFACT_UPLOAD") != "" {
+		return true
+	}
+	return false
 }
 
-func createContainerForArtifact(ctx context.Context, name string) (*containerResponce, error) {
-	param := map[string]string{
-		"Type": "actions_storage",
-		"Name": name,
+func isGHES() bool {
+	if os.Getenv("GITHUB_SERVER_URL") == "" {
+		return false
 	}
-
-	u, err := getArtifactURL()
-	if err != nil {
-		return nil, err
+	if strings.HasSuffix(os.Getenv("GITHUB_SERVER_URL"), "github.com") {
+		return false
 	}
-
-	b, err := json.Marshal(&param)
-	if err != nil {
-		return nil, err
+	if strings.HasSuffix(os.Getenv("GITHUB_SERVER_URL"), ".ghe.com") {
+		return false
 	}
-
-	req, err := http.NewRequest(
-		http.MethodPost,
-		u,
-		bytes.NewReader(b),
-	)
-	if err != nil {
-		return nil, err
+	if strings.HasSuffix(os.Getenv("GITHUB_SERVER_URL"), ".ghe.localhost") {
+		return false
 	}
-	req.Header.Set("Accept", fmt.Sprintf("application/json;api-version=%s", apiVersion))
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", os.Getenv("ACTIONS_RUNTIME_TOKEN")))
-
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
-	}
-
-	res := &containerResponce{}
-	if err := json.Unmarshal(body, res); err != nil {
-		return nil, err
-	}
-
-	return res, nil
+	return true
 }
 
-func upload(ctx context.Context, name, ep, fp string, content io.Reader) (int, error) {
-	u, err := url.Parse(ep)
-	if err != nil {
-		return 0, err
-	}
-	q := u.Query()
-	q.Set("itemPath", filepath.Join(name, fp))
-	q.Set("api-version", apiVersion)
-	u.RawQuery = q.Encode()
-	body := &bytes.Buffer{}
-	if _, err = io.Copy(body, content); err != nil {
-		return 0, err
-	}
-	max := body.Len()
-	buf := make([]byte, 0, uploadChunkSize)
-	start := 0
-	client := &http.Client{}
-	for {
-		n, err := body.Read(buf[:cap(buf)])
-		buf = buf[:n]
-		if n == 0 {
-			if err == nil {
-				continue
-			}
-			if err == io.EOF {
-				break
-			}
-			return 0, err
-		}
-		end := start + n - 1
-		req, err := createRequest(u, start, end, max, bytes.NewReader(buf))
-		if err != nil {
-			return 0, err
-		}
-		resp, err := client.Do(req)
-		if err != nil {
-			return 0, err
-		}
-		if _, err := io.ReadAll(resp.Body); err != nil {
-			return 0, err
-		}
-		if resp.StatusCode != http.StatusCreated && resp.StatusCode != http.StatusAccepted {
-			return 0, errors.New(resp.Status)
-		}
-		start = start + n
-		if err != nil && err != io.EOF {
-			return 0, err
-		}
-	}
-
-	return max, nil
+type backendIds struct {
+	workflowRunBackendId    string
+	workflowJobRunBackendId string
 }
 
-func patchArtifactSize(ctx context.Context, name string, size int) error {
-	e, err := getArtifactURL()
-	if err != nil {
-		return err
+func getBackendIdsFromToken() (*backendIds, error) {
+	rt := os.Getenv("ACTIONS_RUNTIME_TOKEN")
+	if rt == "" {
+		return nil, errors.New("env ACTIONS_RUNTIME_TOKEN is only available from the context of an action")
 	}
-	u, err := url.Parse(e)
-	if err != nil {
-		return err
-	}
-	q := u.Query()
-	q.Set("artifactName", name)
-	q.Set("api-version", apiVersion)
-	u.RawQuery = q.Encode()
-
-	param := map[string]int{
-		"Size": size,
-	}
-	b, err := json.Marshal(&param)
-	if err != nil {
-		return err
-	}
-	req, err := http.NewRequest(
-		http.MethodPatch,
-		u.String(),
-		bytes.NewReader(b),
-	)
-	if err != nil {
-		return err
-	}
-
-	req.Header.Set("Accept", fmt.Sprintf("application/json;api-version=%s", apiVersion))
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", os.Getenv("ACTIONS_RUNTIME_TOKEN")))
-
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		return err
-	}
-	if _, err := io.ReadAll(resp.Body); err != nil {
-		return err
-	}
-	return nil
-}
-
-func uploadFiles(ctx context.Context, name, ep string, files []string) (int, error) {
-	total := 0
-	for _, f := range files {
-		a, err := filepath.Abs(f)
-		if err != nil {
-			return 0, err
-		}
-
-		rel, err := filepath.Rel(os.Getenv("GITHUB_WORKSPACE"), a)
-		if err != nil {
-			return 0, err
-		}
-
-		file, err := os.Open(filepath.Clean(f))
-		if err != nil {
-			return 0, err
-		}
-		size, err := upload(ctx, name, ep, rel, file)
-		if err != nil {
-			_ = file.Close()
-			return 0, err
-		}
-		total += size
-		if err := file.Close(); err != nil {
-			return 0, err
-		}
-
-	}
-	return total, nil
-}
-
-func createRequest(u *url.URL, start, end, max int, b io.Reader) (*http.Request, error) {
-	req, err := http.NewRequest(
-		http.MethodPut,
-		u.String(),
-		b,
-	)
+	jt, err := jwt.ParseString(rt, jwt.WithVerify(false), jwt.WithValidate(false))
 	if err != nil {
 		return nil, err
 	}
-
-	req.Header.Set("Accept", fmt.Sprintf("application/json;api-version=%s", apiVersion))
-	req.Header.Set("Content-Type", "application/octet-stream")
-	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", os.Getenv("ACTIONS_RUNTIME_TOKEN")))
-	req.Header.Set("Content-Length", fmt.Sprintf("%d", end-start+1))
-	req.Header.Set("Content-Range", fmt.Sprintf("bytes %d-%d/%d", start, end, max))
-
-	return req, nil
-}
-
-func getArtifactURL() (string, error) {
-	if os.Getenv("ACTIONS_RUNTIME_URL") == "" {
-		return "", errors.New("env ACTIONS_RUNTIME_URL is only available from the context of an action")
+	scp, ok := jt.Get("scp")
+	if !ok {
+		return nil, errors.New("no scp in ACTIONS_RUNTIME_TOKEN")
 	}
-	if os.Getenv("GITHUB_RUN_ID") == "" {
-		return "", errors.New("env GITHUB_RUN_ID is only available from the context of an action")
+	scpParts, ok := scp.(string)
+	if !ok {
+		return nil, errors.New("invalid scp in ACTIONS_RUNTIME_TOKEN")
 	}
-	return fmt.Sprintf("%s_apis/pipelines/workflows/%s/artifacts?api-version=%s", os.Getenv("ACTIONS_RUNTIME_URL"), os.Getenv("GITHUB_RUN_ID"), apiVersion), nil
+	for _, scopes := range strings.Split(scpParts, " ") {
+		scopeParts := strings.Split(scopes, ":")
+		if scopeParts[0] != "Actions.Results" {
+			continue
+		}
+		if len(scopeParts) != 3 {
+			return nil, errors.New("invalid scp in ACTIONS_RUNTIME_TOKEN")
+		}
+		return &backendIds{
+			workflowRunBackendId:    scopeParts[1],
+			workflowJobRunBackendId: scopeParts[2],
+		}, nil
+	}
+
+	return nil, errors.New("no backend ids found")
 }
