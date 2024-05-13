@@ -1,3 +1,3 @@
-FROM golang:1.19
+FROM golang:latest
 
 ENTRYPOINT ["env", "GOPATH=/go", "GOROOT=", "go", "test", "./...", "-coverprofile=coverage.out", "-covermode=count"]
