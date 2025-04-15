@@ -23,6 +23,9 @@ jobs:
           
       - name: Run lint
         uses: reviewdog/action-golangci-lint@v2
+        with:
+          fail_level: warning
+          go_version_file: go.mod
 
       - name: Run tests ( upload contents )
         uses: ./testdata/
