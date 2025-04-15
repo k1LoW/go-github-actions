@@ -8,6 +8,7 @@ import (
 )
 
 func TestGetArtifactURL(t *testing.T) {
+	t.Skip("because this test is not running on current GitHub Actions")
 	if os.Getenv("GITHUB_ACTIONS") == "" {
 		t.Skip("Not running on GitHub Actions")
 	}
@@ -21,6 +22,7 @@ func TestGetArtifactURL(t *testing.T) {
 }
 
 func TestCreateContainerForArtifact(t *testing.T) {
+	t.Skip("because this test is not running on current GitHub Actions")
 	if os.Getenv("GITHUB_ACTIONS") == "" {
 		t.Skip("Not running on GitHub Actions")
 	}
@@ -40,6 +42,7 @@ func TestCreateContainerForArtifact(t *testing.T) {
 }
 
 func TestUpload(t *testing.T) {
+	t.Skip("because this test is not running on current GitHub Actions")
 	if os.Getenv("GITHUB_ACTIONS") == "" {
 		t.Skip("Not running on GitHub Actions")
 	}
@@ -49,6 +52,7 @@ func TestUpload(t *testing.T) {
 }
 
 func TestUploadLargeContent(t *testing.T) {
+	t.Skip("because this test is not running on current GitHub Actions")
 	if os.Getenv("GITHUB_ACTIONS") == "" {
 		t.Skip("Not running on GitHub Actions")
 	}
@@ -61,6 +65,7 @@ func TestUploadLargeContent(t *testing.T) {
 }
 
 func TestUploadFiles(t *testing.T) {
+	t.Skip("because this test is not running on current GitHub Actions")
 	if os.Getenv("GITHUB_ACTIONS") == "" {
 		t.Skip("Not running on GitHub Actions")
 	}
