@@ -1,5 +1,10 @@
 # Changelog
 
+## [v0.2.0](https://github.com/k1LoW/go-github-actions/compare/v0.1.0...v0.2.0) - 2025-04-15
+### Other Changes
+- Bump golang.org/x/crypto from 0.21.0 to 0.35.0 by @dependabot in https://github.com/k1LoW/go-github-actions/pull/11
+- Remove test for legacy by @k1LoW in https://github.com/k1LoW/go-github-actions/pull/13
+
 ## [v0.1.0](https://github.com/k1LoW/go-github-actions/compare/v0.0.2...v0.1.0) - 2024-05-14
 ### New Features 🎉
 - Support Artifact v2 API by @k1LoW in https://github.com/k1LoW/go-github-actions/pull/4
