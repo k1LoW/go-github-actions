@@ -68,49 +68,6 @@ jobs:
       - name: Test TestUploadFiles (3/3)
         run: cat artifact/testdata/test2.txt artifact/testdata/test3.txt
 
-      # Legacy API
-        
-      - name: Test TestUploadLegacy (1/2)
-        uses: actions/download-artifact@v3
-        with:
-          name: TestUploadLegacy
-
-      - name: Test TestUploadLegacy (2/2)
-        run: cat artifact/testdata/test.txt
-
-      - name: Test TestUploadLargeContentLegacy (1/2)
-        uses: actions/download-artifact@v3
-        with:
-          name: TestUploadLargeContentLegacy
-
-      - name: Test TestUploadLargeContentLegacy (2/2)
-        uses: k1LoW/github-script-ruby@v2
-        with:
-          script: |
-            File.open('artifact/testdata/large.txt') do |f|
-              f.each_line do |line|
-                unless line.match?(/^0123456789/)
-                  puts line
-                  exit 1
-                end
-              end
-              unless f.lineno == 1024 * 1024 * 10
-                puts f.lineno
-                exit 1
-              end
-            end
-
-      - name: Test TestUploadFilesLegacy (1/3)
-        run: rm artifact/testdata/test2.txt artifact/testdata/test3.txt
-
-      - name: Test TestUploadFilesLegacy (2/3)
-        uses: actions/download-artifact@v3
-        with:
-          name: TestUploadFilesLegacy
-
-      - name: Test TestUploadFilesLegacy (3/3)
-        run: cat artifact/testdata/test2.txt artifact/testdata/test3.txt
-
       - name: Cleanup artifacts
         uses: glassechidna/artifact-cleaner@master
         with:
