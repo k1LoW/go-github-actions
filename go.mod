@@ -1,6 +1,6 @@
 module github.com/k1LoW/go-github-actions
 
-go 1.23.8
+go 1.24.7
 
 require (
 	connectrpc.com/connect v1.18.1
