@@ -35,7 +35,7 @@ jobs:
         uses: ./testdata/
 
       - name: Test TestUpload (1/2)
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v6
         with:
           name: TestUpload
 
@@ -43,7 +43,7 @@ jobs:
         run: cat artifact/testdata/test.txt
 
       - name: Test TestUploadLargeContent (1/2)
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v6
         with:
           name: TestUploadLargeContent
 
@@ -68,7 +68,7 @@ jobs:
         run: rm artifact/testdata/test2.txt artifact/testdata/test3.txt
 
       - name: Test TestUploadFiles (2/3)
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v6
         with:
           name: TestUploadFiles
 
