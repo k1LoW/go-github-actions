@@ -1,5 +1,15 @@
 # Changelog
 
+## [v0.2.1](https://github.com/k1LoW/go-github-actions/compare/v0.2.0...v0.2.1) - 2025-11-20
+### Other Changes
+- chore(deps): bump the dependencies group with 3 updates by @dependabot[bot] in https://github.com/k1LoW/go-github-actions/pull/15
+- chore(deps): bump the dependencies group with 4 updates by @dependabot[bot] in https://github.com/k1LoW/go-github-actions/pull/16
+- chore(deps): bump the dependencies group across 1 directory with 3 updates by @dependabot[bot] in https://github.com/k1LoW/go-github-actions/pull/19
+- chore: setup tagpr labels by @k1LoW in https://github.com/k1LoW/go-github-actions/pull/21
+- chore(deps): bump github.com/Azure/azure-sdk-for-go/sdk/storage/azblob from 1.6.2 to 1.6.3 in the dependencies group by @dependabot[bot] in https://github.com/k1LoW/go-github-actions/pull/20
+- chore(deps): bump actions/download-artifact from 5 to 6 in the dependencies group by @dependabot[bot] in https://github.com/k1LoW/go-github-actions/pull/22
+- chore(deps): bump golang.org/x/crypto from 0.41.0 to 0.45.0 by @dependabot[bot] in https://github.com/k1LoW/go-github-actions/pull/23
+
 ## [v0.2.0](https://github.com/k1LoW/go-github-actions/compare/v0.1.0...v0.2.0) - 2025-04-15
 ### Other Changes
 - Bump golang.org/x/crypto from 0.21.0 to 0.35.0 by @dependabot in https://github.com/k1LoW/go-github-actions/pull/11
