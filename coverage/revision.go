@@ -58,7 +58,7 @@ func readEvent() (map[string]any, error) {
 	if path == "" {
 		return map[string]any{}, nil
 	}
-	b, err := os.ReadFile(path)
+	b, err := os.ReadFile(path) //nolint:gosec // path is GitHub Actions controlled GITHUB_EVENT_PATH
 	if err != nil {
 		if os.IsNotExist(err) {
 			return map[string]any{}, nil
@@ -113,13 +113,13 @@ func lookupOpenPullRequest(ctx context.Context, repo, branch string) (int, error
 	q.Set("head", fmt.Sprintf("%s:%s", owner, branch))
 	u := fmt.Sprintf("%s/repos/%s/pulls?%s", strings.TrimRight(apiURL, "/"), repo, q.Encode())
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u, nil) //nolint:gosec // URL composed from GitHub Actions controlled env vars
 	if err != nil {
 		return 0, nil
 	}
 	req.Header.Set("Authorization", "Bearer "+token)
 	req.Header.Set("Accept", "application/vnd.github+json")
-	res, err := http.DefaultClient.Do(req)
+	res, err := http.DefaultClient.Do(req) //nolint:gosec // request URL is controlled (see above)
 	if err != nil {
 		return 0, nil
 	}

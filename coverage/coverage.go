@@ -98,7 +98,7 @@ func upload(ctx context.Context, payload map[string]any) error {
 	}
 
 	url := fmt.Sprintf("%s/repos/%s/code-coverage/report", strings.TrimRight(apiURL, "/"), repo)
-	req, err := http.NewRequestWithContext(ctx, http.MethodPut, url, bytes.NewReader(body))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPut, url, bytes.NewReader(body)) //nolint:gosec // URL composed from GitHub Actions controlled env vars
 	if err != nil {
 		return err
 	}
@@ -106,7 +106,7 @@ func upload(ctx context.Context, payload map[string]any) error {
 	req.Header.Set("Accept", "application/vnd.github+json")
 	req.Header.Set("Content-Type", "application/json")
 
-	res, err := http.DefaultClient.Do(req)
+	res, err := http.DefaultClient.Do(req) //nolint:gosec // request URL is controlled (see above)
 	if err != nil {
 		return fmt.Errorf("coverage upload request failed: %w", err)
 	}
