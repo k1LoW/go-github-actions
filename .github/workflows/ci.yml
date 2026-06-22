@@ -21,12 +21,12 @@ jobs:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: Check out source code
-        uses: actions/checkout@v7
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Run lint
-        uses: reviewdog/action-golangci-lint@v2
+        uses: reviewdog/action-golangci-lint@c76cceaaab89abe74e649d2e34c6c9adc26662d2 # v2.10.0
         with:
           fail_level: warning
           go_version_file: go.mod
@@ -35,7 +35,7 @@ jobs:
         uses: ./testdata/
 
       - name: Test TestUpload (1/2)
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: TestUpload
 
@@ -43,12 +43,12 @@ jobs:
         run: cat artifact/testdata/test.txt
 
       - name: Test TestUploadLargeContent (1/2)
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: TestUploadLargeContent
 
       - name: Test TestUploadLargeContent (2/2)
-        uses: k1LoW/github-script-ruby@v2
+        uses: k1LoW/github-script-ruby@dc60223e38de8e690b3da02e8a69fa60d423224c # v2.6.1
         with:
           script: |
             File.open('artifact/testdata/large.txt') do |f|
@@ -68,7 +68,7 @@ jobs:
         run: rm artifact/testdata/test2.txt artifact/testdata/test3.txt
 
       - name: Test TestUploadFiles (2/3)
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: TestUploadFiles
 
@@ -81,7 +81,7 @@ jobs:
           minimumAge: 3600
 
       - name: Run octocov
-        uses: k1LoW/octocov-action@v1
+        uses: k1LoW/octocov-action@b3b6ee60482a667950f87553abf1df63217235d9 # v1.5.1
 
       - name: Run Trivy vulnerability scanner in repo mode
         uses: aquasecurity/trivy-action@master
