@@ -48,7 +48,7 @@ jobs:
           name: TestUploadLargeContent
 
       - name: Test TestUploadLargeContent (2/2)
-        uses: k1LoW/github-script-ruby@dc60223e38de8e690b3da02e8a69fa60d423224c # v2.6.1
+        uses: k1LoW/github-script-ruby@3125c9282eb2241d3fb929bfe1d5b9a3a9255513 # v2.6.2
         with:
           script: |
             File.open('artifact/testdata/large.txt') do |f|
