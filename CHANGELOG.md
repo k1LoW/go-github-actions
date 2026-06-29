@@ -1,5 +1,16 @@
 # Changelog
 
+## [v0.2.2](https://github.com/k1LoW/go-github-actions/compare/v0.2.1...v0.2.2) - 2026-06-29
+
+### Other Changes
+- chore(deps): bump google.golang.org/grpc from 1.79.3 to 1.80.0 in the dependencies group by @dependabot[bot] in https://github.com/k1LoW/go-github-actions/pull/34
+- chore(deps): bump connectrpc.com/connect from 1.19.1 to 1.19.2 in the dependencies group by @dependabot[bot] in https://github.com/k1LoW/go-github-actions/pull/36
+- chore(deps): bump google.golang.org/grpc from 1.80.0 to 1.81.0 in the dependencies group by @dependabot[bot] in https://github.com/k1LoW/go-github-actions/pull/37
+- chore(deps): bump the dependencies group with 2 updates by @dependabot[bot] in https://github.com/k1LoW/go-github-actions/pull/38
+- chore(deps): bump the dependencies group across 1 directory with 2 updates by @dependabot[bot] in https://github.com/k1LoW/go-github-actions/pull/41
+- chore(deps): bump actions/checkout from 6 to 7 in the dependencies group by @dependabot[bot] in https://github.com/k1LoW/go-github-actions/pull/42
+- chore(deps): bump the dependencies group with 2 updates by @dependabot[bot] in https://github.com/k1LoW/go-github-actions/pull/43
+
 ## [v0.2.1](https://github.com/k1LoW/go-github-actions/compare/v0.2.0...v0.2.1) - 2026-03-19
 ### Other Changes
 - chore(deps): bump the dependencies group with 3 updates by @dependabot[bot] in https://github.com/k1LoW/go-github-actions/pull/15
