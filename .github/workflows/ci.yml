@@ -17,6 +17,7 @@ jobs:
       contents: write
       pull-requests: write
       actions: write
+      code-quality: write
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
@@ -74,6 +75,16 @@ jobs:
 
       - name: Test TestUploadFiles (3/3)
         run: cat artifact/testdata/test2.txt artifact/testdata/test3.txt
+
+      - name: Test TestUploadIntegration
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          SHA="${{ github.event.pull_request.head.sha || github.sha }}"
+          gh api -X GET "repos/${{ github.repository }}/code-coverage/report" \
+            -f commit_oid="$SHA" \
+            -f label="code-coverage/go-test"
 
       - name: Cleanup artifacts
         uses: glassechidna/artifact-cleaner@master
