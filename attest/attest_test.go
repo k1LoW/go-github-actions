@@ -23,7 +23,7 @@ func testClaims() *claims {
 		Ref:               "refs/heads/main",
 		SHA:               "deadbeef",
 		EventName:         "push",
-		WorkflowRef:       "k1LoW/go-github-actions/.github/workflows/ci.yml@refs/heads/main",
+		WorkflowRef:       "k1LoW/go-github-actions/.github/workflows/ci.yml@refs/heads/workflow",
 		JobWorkflowRef:    "k1LoW/go-github-actions/.github/workflows/ci.yml@refs/heads/main",
 		RunnerEnvironment: "github-hosted",
 		RunID:             "100",

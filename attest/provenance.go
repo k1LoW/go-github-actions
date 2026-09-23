@@ -19,7 +19,7 @@ func buildProvenancePredicate(c *claims, serverURL string) (*structpb.Struct, er
 	if !ok {
 		return nil, fmt.Errorf("workflow_ref claim does not belong to repository %s: %s", c.Repository, c.WorkflowRef)
 	}
-	path, ref, ok := strings.Cut(rest, "@")
+	path, _, ok := strings.Cut(rest, "@")
 	if !ok {
 		return nil, fmt.Errorf("invalid workflow_ref claim: %s", c.WorkflowRef)
 	}
@@ -28,7 +28,8 @@ func buildProvenancePredicate(c *claims, serverURL string) (*structpb.Struct, er
 			"buildType": buildType,
 			"externalParameters": map[string]any{
 				"workflow": map[string]any{
-					"ref":        ref,
+					// Not the ref of workflow_ref, which differs from the ref of the run for events on ref-less commits.
+					"ref":        c.Ref,
 					"repository": fmt.Sprintf("%s/%s", serverURL, c.Repository),
 					"path":       path,
 				},
