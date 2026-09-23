@@ -59,6 +59,9 @@ func TestUploadUnarchived(t *testing.T) {
 	if os.Getenv("GITHUB_ACTIONS") == "" {
 		t.Skip("Not running on GitHub Actions")
 	}
+	if useLegacy() {
+		t.Skip("Uploading an artifact without archiving it is not supported with legacy artifact upload")
+	}
 	id, err := UploadUnarchived(context.TODO(), "TestUploadUnarchived.html", strings.NewReader("<!doctype html><title>hello artifact</title>\n"))
 	if err != nil {
 		t.Fatal(err)
