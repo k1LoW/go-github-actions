@@ -29,7 +29,7 @@ type Attester interface {
 	Attest(ctx context.Context, subjectName string, subjectDigest map[string]string) error
 }
 
-// Option is an option for Upload and UploadFiles.
+// Option is an option for Upload, UploadFiles and UploadUnarchived.
 type Option func(*config)
 
 // WithAttestation sets the attestation mode and the Attester used to create attestations.

@@ -2,6 +2,7 @@ package artifact
 
 import (
 	"context"
+	"errors"
 	"os"
 	"strings"
 	"testing"
@@ -51,5 +52,47 @@ func TestUploadWithAttestation(t *testing.T) {
 	opt := WithAttestation(AttestRequired, attest.New())
 	if err := Upload(context.TODO(), "TestUploadWithAttestation", "artifact/testdata/attested.txt", strings.NewReader("hello attestation\n"), opt); err != nil {
 		t.Error(err)
+	}
+}
+
+func TestUploadUnarchived(t *testing.T) {
+	if os.Getenv("GITHUB_ACTIONS") == "" {
+		t.Skip("Not running on GitHub Actions")
+	}
+	if useLegacy() {
+		t.Skip("Uploading an artifact without archiving it is not supported with legacy artifact upload")
+	}
+	id, err := UploadUnarchived(context.TODO(), "TestUploadUnarchived.html", strings.NewReader("<!doctype html><title>hello artifact</title>\n"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if id == 0 {
+		t.Error("the ID of the uploaded artifact is not returned")
+	}
+}
+
+func TestUploadUnarchivedOnLegacy(t *testing.T) {
+	t.Setenv("ACTIONS_USE_LEGACY_ARTIFACT_UPLOAD", "true")
+	if _, err := UploadUnarchived(context.TODO(), "test.html", strings.NewReader("")); !errors.Is(err, ErrUnarchivedUploadNotSupported) {
+		t.Errorf("got %v, want %v", err, ErrUnarchivedUploadNotSupported)
+	}
+}
+
+func TestMimeType(t *testing.T) {
+	tests := []struct {
+		name string
+		want string
+	}{
+		{"report.html", "text/html"},
+		{"report.txt", "text/plain"},
+		{"report.json", "application/json"},
+		{"report", "application/octet-stream"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := mimeType(tt.name); got != tt.want {
+				t.Errorf("got %q, want %q", got, tt.want)
+			}
+		})
 	}
 }

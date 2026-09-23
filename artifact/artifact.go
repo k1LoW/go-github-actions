@@ -8,6 +8,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"io"
+	"mime"
 	"os"
 	"path/filepath"
 	"strings"
@@ -97,30 +98,27 @@ func UploadFiles(ctx context.Context, name string, files []string, opts ...Optio
 	})
 }
 
+// ErrUnarchivedUploadNotSupported is returned by UploadUnarchived where artifacts are
+// uploaded through the legacy API, which archives every artifact it serves.
+var ErrUnarchivedUploadNotSupported = errors.New("uploading an artifact without archiving it is not supported with legacy artifact upload")
+
+// UploadUnarchived uploads content as a GitHub Actions artifact of a single file, without
+// archiving it, and returns the ID of the artifact. The artifact is named after the file, as
+// actions/upload-artifact names it with `archive: false`, and is served as the file itself,
+// so an HTML file opens in the browser rather than being downloaded as a zip.
+func UploadUnarchived(ctx context.Context, name string, content io.Reader, opts ...Option) (int64, error) {
+	c := newConfig(opts)
+	if useLegacy() {
+		return 0, ErrUnarchivedUploadNotSupported
+	}
+	b, err := io.ReadAll(content)
+	if err != nil {
+		return 0, err
+	}
+	return uploadBlob(ctx, c, name, mimeType(name), b)
+}
+
 func uploadZip(ctx context.Context, c *config, name string, write func(zw *zip.Writer) error) error {
-	ids, err := getBackendIdsFromToken()
-	if err != nil {
-		return err
-	}
-	apic, err := newAPIClient()
-	if err != nil {
-		return err
-	}
-	req := connect.NewRequest(&apiv1.CreateArtifactRequest{
-		WorkflowRunBackendId:    ids.workflowRunBackendId,
-		WorkflowJobRunBackendId: ids.workflowJobRunBackendId,
-		Name:                    name,
-		Version:                 4,
-	})
-
-	res, err := apic.CreateArtifact(ctx, req)
-	if err != nil {
-		return err
-	}
-	if !res.Msg.GetOk() {
-		return errors.New("response is not ok")
-	}
-
 	buf := new(bytes.Buffer)
 	zw := zip.NewWriter(buf)
 	if err := write(zw); err != nil {
@@ -129,17 +127,52 @@ func uploadZip(ctx context.Context, c *config, name string, write func(zw *zip.W
 	if err := zw.Close(); err != nil {
 		return err
 	}
-	// Read size and digest before uploading because uploading drains buf.
-	size := int64(buf.Len())
-	sum := sha256.Sum256(buf.Bytes())
+	_, err := uploadBlob(ctx, c, name, "", buf.Bytes())
+	return err
+}
+
+// uploadBlob creates the artifact, uploads b as its content and finalizes it. An empty
+// contentType uploads b as the zip archive the artifact is served as.
+func uploadBlob(ctx context.Context, c *config, name, contentType string, b []byte) (int64, error) {
+	ids, err := getBackendIdsFromToken()
+	if err != nil {
+		return 0, err
+	}
+	apic, err := newAPIClient()
+	if err != nil {
+		return 0, err
+	}
+	creq := &apiv1.CreateArtifactRequest{
+		WorkflowRunBackendId:    ids.workflowRunBackendId,
+		WorkflowJobRunBackendId: ids.workflowJobRunBackendId,
+		Name:                    name,
+		Version:                 4,
+	}
+	if contentType != "" {
+		// Version 7 is the one that reads the MIME type, which is what tells the backend the
+		// content is the file itself rather than a zip archive of it.
+		creq.Version = 7
+		creq.MimeType = wrapperspb.String(contentType)
+	}
+
+	res, err := apic.CreateArtifact(ctx, connect.NewRequest(creq))
+	if err != nil {
+		return 0, err
+	}
+	if !res.Msg.GetOk() {
+		return 0, errors.New("response is not ok")
+	}
+
+	size := int64(len(b))
+	sum := sha256.Sum256(b)
 	digest := hex.EncodeToString(sum[:])
-	if err := upload(ctx, res.Msg.GetSignedUploadUrl(), buf); err != nil {
-		return err
+	if err := upload(ctx, res.Msg.GetSignedUploadUrl(), bytes.NewReader(b), contentType); err != nil {
+		return 0, err
 	}
 
 	// Attest before finalizing so that a failed required attestation does not leave a visible, unattested artifact.
 	if err := c.attest(ctx, name, map[string]string{"sha256": digest}); err != nil {
-		return err
+		return 0, err
 	}
 
 	{
@@ -153,14 +186,23 @@ func uploadZip(ctx context.Context, c *config, name string, write func(zw *zip.W
 
 		res, err := apic.FinalizeArtifact(ctx, req)
 		if err != nil {
-			return err
+			return 0, err
 		}
 		if !res.Msg.GetOk() {
-			return errors.New("response is not ok")
+			return 0, errors.New("response is not ok")
 		}
+		return res.Msg.GetArtifactId(), nil
 	}
+}
 
-	return nil
+// mimeType returns the MIME type an artifact named after a file is served with.
+func mimeType(name string) string {
+	// The backend rejects a MIME type with parameters, such as the charset the system MIME
+	// tables add to text types, so only the media type is sent.
+	if t, _, err := mime.ParseMediaType(mime.TypeByExtension(filepath.Ext(name))); err == nil {
+		return t
+	}
+	return "application/octet-stream"
 }
 
 func useLegacy() bool {
