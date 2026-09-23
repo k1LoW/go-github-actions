@@ -3,6 +3,8 @@ package attest
 import (
 	"context"
 	"encoding/json"
+	"fmt"
+	"net/url"
 	"os"
 
 	protobundle "github.com/sigstore/protobuf-specs/gen/pb-go/bundle/v1"
@@ -13,16 +15,41 @@ import (
 const (
 	publicGoodFulcioURL = "https://fulcio.sigstore.dev"
 	publicGoodRekorURL  = "https://rekor.sigstore.dev"
-	githubFulcioURL     = "https://fulcio.githubapp.com"
-	githubTSAURL        = "https://timestamp.githubapp.com/api/v1/timestamp"
 	retries             = 3
 )
 
-// signStatement signs the in-toto statement with the same Sigstore instance that @actions/attest selects.
+type endpoints struct {
+	fulcioURL string
+	rekorURL  string
+	tsaURL    string
+}
+
+// signingEndpoints selects the same Sigstore instance as @actions/attest.
 // Public repositories use the Public Good instance and record the signature in Rekor.
-// Other repositories use the GitHub instance, which uses a timestamp authority instead of a transparency log
-// so that details of private repositories are not published.
-func signStatement(ctx context.Context, statement []byte, idToken string, public bool) (*protobundle.Bundle, error) {
+// Other repositories use the GitHub instance of the server, which uses a timestamp authority instead of a
+// transparency log so that details of private repositories are not published.
+func signingEndpoints(public bool, serverURL string) (*endpoints, error) {
+	if public {
+		return &endpoints{fulcioURL: publicGoodFulcioURL, rekorURL: publicGoodRekorURL}, nil
+	}
+	u, err := url.Parse(serverURL)
+	if err != nil {
+		return nil, err
+	}
+	host := u.Hostname()
+	if host == "" {
+		return nil, fmt.Errorf("invalid server URL: %s", serverURL)
+	}
+	if host == "github.com" {
+		host = "githubapp.com"
+	}
+	return &endpoints{
+		fulcioURL: "https://fulcio." + host,
+		tsaURL:    "https://timestamp." + host + "/api/v1/timestamp",
+	}, nil
+}
+
+func signStatement(ctx context.Context, statement []byte, idToken string, eps *endpoints) (*protobundle.Bundle, error) {
 	keypair, err := sign.NewEphemeralKeypair(nil)
 	if err != nil {
 		return nil, err
@@ -35,15 +62,15 @@ func signStatement(ctx context.Context, statement []byte, idToken string, public
 		Context:                    ctx,
 		CertificateProviderOptions: &sign.CertificateProviderOptions{IDToken: idToken},
 	}
-	if public {
-		opts.CertificateProvider = sign.NewFulcio(&sign.FulcioOptions{BaseURL: publicGoodFulcioURL, Retries: retries})
+	opts.CertificateProvider = sign.NewFulcio(&sign.FulcioOptions{BaseURL: eps.fulcioURL, Retries: retries})
+	if eps.rekorURL != "" {
 		opts.TransparencyLogs = []sign.Transparency{
-			sign.NewRekor(&sign.RekorOptions{BaseURL: publicGoodRekorURL, Retries: retries}),
+			sign.NewRekor(&sign.RekorOptions{BaseURL: eps.rekorURL, Retries: retries}),
 		}
-	} else {
-		opts.CertificateProvider = sign.NewFulcio(&sign.FulcioOptions{BaseURL: githubFulcioURL, Retries: retries})
+	}
+	if eps.tsaURL != "" {
 		opts.TimestampAuthorities = []*sign.TimestampAuthority{
-			sign.NewTimestampAuthority(&sign.TimestampAuthorityOptions{URL: githubTSAURL, Retries: retries}),
+			sign.NewTimestampAuthority(&sign.TimestampAuthorityOptions{URL: eps.tsaURL, Retries: retries}),
 		}
 	}
 	return sign.Bundle(content, keypair, opts)

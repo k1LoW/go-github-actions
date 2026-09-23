@@ -54,6 +54,10 @@ func (a *Attester) Attest(ctx context.Context, subjectName string, subjectDigest
 	if a.token == "" {
 		return errors.New("GitHub token is required to store attestations")
 	}
+	eps, err := signingEndpoints(isPublicRepository(), serverURL())
+	if err != nil {
+		return err
+	}
 	idToken, err := requestIDToken(ctx, a.httpClient, "sigstore")
 	if err != nil {
 		return err
@@ -82,7 +86,7 @@ func (a *Attester) Attest(ctx context.Context, subjectName string, subjectDigest
 	if err != nil {
 		return err
 	}
-	b, err := signStatement(ctx, payload, idToken, isPublicRepository())
+	b, err := signStatement(ctx, payload, idToken, eps)
 	if err != nil {
 		return fmt.Errorf("failed to sign attestation: %w", err)
 	}

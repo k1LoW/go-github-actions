@@ -228,6 +228,32 @@ func TestIsPublicRepository(t *testing.T) {
 	})
 }
 
+func TestSigningEndpoints(t *testing.T) {
+	tests := []struct {
+		name      string
+		public    bool
+		serverURL string
+		want      *endpoints
+		wantErr   bool
+	}{
+		{"public repository", true, "https://github.com", &endpoints{fulcioURL: "https://fulcio.sigstore.dev", rekorURL: "https://rekor.sigstore.dev"}, false},
+		{"private repository on github.com", false, "https://github.com", &endpoints{fulcioURL: "https://fulcio.githubapp.com", tsaURL: "https://timestamp.githubapp.com/api/v1/timestamp"}, false},
+		{"private repository on ghe.com", false, "https://octo.ghe.com", &endpoints{fulcioURL: "https://fulcio.octo.ghe.com", tsaURL: "https://timestamp.octo.ghe.com/api/v1/timestamp"}, false},
+		{"invalid server URL", false, "github.com", nil, true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := signingEndpoints(tt.public, tt.serverURL)
+			if (err != nil) != tt.wantErr {
+				t.Fatalf("got err %v, want err %v", err, tt.wantErr)
+			}
+			if tt.want != nil && *got != *tt.want {
+				t.Errorf("got %+v, want %+v", got, tt.want)
+			}
+		})
+	}
+}
+
 func assertJSONEq(t *testing.T, got, want []byte) {
 	t.Helper()
 	var g, w any
