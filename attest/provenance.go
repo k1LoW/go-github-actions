@@ -15,7 +15,11 @@ const (
 // buildProvenancePredicate builds the same predicate as buildSLSAProvenancePredicate of @actions/attest.
 func buildProvenancePredicate(c *claims, serverURL string) (*structpb.Struct, error) {
 	// workflow_ref is "{owner}/{repo}/{path}@{ref}".
-	path, ref, ok := strings.Cut(strings.TrimPrefix(c.WorkflowRef, c.Repository+"/"), "@")
+	rest, ok := strings.CutPrefix(c.WorkflowRef, c.Repository+"/")
+	if !ok {
+		return nil, fmt.Errorf("workflow_ref claim does not belong to repository %s: %s", c.Repository, c.WorkflowRef)
+	}
+	path, ref, ok := strings.Cut(rest, "@")
 	if !ok {
 		return nil, fmt.Errorf("invalid workflow_ref claim: %s", c.WorkflowRef)
 	}

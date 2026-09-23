@@ -74,10 +74,21 @@ func TestBuildProvenancePredicate(t *testing.T) {
 }
 
 func TestBuildProvenancePredicateInvalidWorkflowRef(t *testing.T) {
-	c := testClaims()
-	c.WorkflowRef = "k1LoW/go-github-actions/.github/workflows/ci.yml"
-	if _, err := buildProvenancePredicate(c, "https://github.com"); err == nil {
-		t.Error("want error")
+	tests := []struct {
+		name        string
+		workflowRef string
+	}{
+		{"no ref", "k1LoW/go-github-actions/.github/workflows/ci.yml"},
+		{"other repository", "k1LoW/other/.github/workflows/ci.yml@refs/heads/main"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			c := testClaims()
+			c.WorkflowRef = tt.workflowRef
+			if _, err := buildProvenancePredicate(c, "https://github.com"); err == nil {
+				t.Error("want error")
+			}
+		})
 	}
 }
 
