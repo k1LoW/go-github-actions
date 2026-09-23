@@ -1,11 +1,13 @@
 package attest
 
 import (
+	"bytes"
 	"context"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
 	"os"
@@ -52,7 +54,8 @@ func requestIDToken(ctx context.Context, c *http.Client, audience string) (strin
 	}
 	defer res.Body.Close()
 	if res.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("failed to request ID token: %s", res.Status)
+		msg, _ := io.ReadAll(io.LimitReader(res.Body, 1024))
+		return "", fmt.Errorf("failed to request ID token: %s: %s", res.Status, bytes.TrimSpace(msg))
 	}
 	var body struct {
 		Value string `json:"value"`
