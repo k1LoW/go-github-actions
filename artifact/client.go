@@ -12,6 +12,7 @@ import (
 
 	"connectrpc.com/connect"
 	"github.com/Azure/azure-sdk-for-go/sdk/storage/azblob"
+	"github.com/Azure/azure-sdk-for-go/sdk/storage/azblob/blob"
 	"github.com/k1LoW/go-github-actions/artifact/proto/gen/go/results/api/v1/apiv1connect"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
@@ -27,7 +28,7 @@ func newAPIClient() (apiv1connect.ArtifactServiceClient, error) {
 	return apic, nil
 }
 
-func upload(ctx context.Context, uploadURL string, content io.Reader) error {
+func upload(ctx context.Context, uploadURL string, content io.Reader, contentType string) error {
 	u, err := url.Parse(uploadURL)
 	if err != nil {
 		return err
@@ -44,7 +45,11 @@ func upload(ctx context.Context, uploadURL string, content io.Reader) error {
 	if err != nil {
 		return err
 	}
-	if _, err := uploadc.UploadStream(ctx, containerName, blobName, content, &azblob.UploadStreamOptions{}); err != nil {
+	opts := &azblob.UploadStreamOptions{}
+	if contentType != "" {
+		opts.HTTPHeaders = &blob.HTTPHeaders{BlobContentType: &contentType}
+	}
+	if _, err := uploadc.UploadStream(ctx, containerName, blobName, content, opts); err != nil {
 		return err
 	}
 	return nil
