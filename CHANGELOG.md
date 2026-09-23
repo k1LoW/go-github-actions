@@ -1,5 +1,10 @@
 # Changelog
 
+## [v0.4.0](https://github.com/k1LoW/go-github-actions/compare/v0.3.0...v0.4.0) - 2026-09-23
+
+### New Features 🎉
+- feat: upload a single file as an artifact without archiving it by @k1LoW in https://github.com/k1LoW/go-github-actions/pull/57
+
 ## [v0.3.0](https://github.com/k1LoW/go-github-actions/compare/v0.2.1...v0.3.0) - 2026-09-23
 
 ### New Features 🎉
