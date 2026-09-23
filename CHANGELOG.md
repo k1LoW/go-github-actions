@@ -1,5 +1,23 @@
 # Changelog
 
+## [v0.3.0](https://github.com/k1LoW/go-github-actions/compare/v0.2.1...v0.3.0) - 2026-09-23
+
+### New Features 🎉
+- feat: support artifact attestation on upload by @k1LoW in https://github.com/k1LoW/go-github-actions/pull/55
+### Other Changes
+- chore(deps): bump google.golang.org/grpc from 1.79.3 to 1.80.0 in the dependencies group by @dependabot[bot] in https://github.com/k1LoW/go-github-actions/pull/34
+- chore(deps): bump connectrpc.com/connect from 1.19.1 to 1.19.2 in the dependencies group by @dependabot[bot] in https://github.com/k1LoW/go-github-actions/pull/36
+- chore(deps): bump google.golang.org/grpc from 1.80.0 to 1.81.0 in the dependencies group by @dependabot[bot] in https://github.com/k1LoW/go-github-actions/pull/37
+- chore(deps): bump the dependencies group with 2 updates by @dependabot[bot] in https://github.com/k1LoW/go-github-actions/pull/38
+- chore(deps): bump the dependencies group across 1 directory with 2 updates by @dependabot[bot] in https://github.com/k1LoW/go-github-actions/pull/41
+- chore(deps): bump actions/checkout from 6 to 7 in the dependencies group by @dependabot[bot] in https://github.com/k1LoW/go-github-actions/pull/42
+- chore(deps): bump the dependencies group with 2 updates by @dependabot[bot] in https://github.com/k1LoW/go-github-actions/pull/43
+- chore(deps): bump google.golang.org/grpc from 1.81.1 to 1.82.1 by @dependabot[bot] in https://github.com/k1LoW/go-github-actions/pull/46
+- chore(deps): bump github.com/lestrrat-go/jwx/v2 from 2.1.6 to 2.1.7 in the dependencies group across 1 directory by @dependabot[bot] in https://github.com/k1LoW/go-github-actions/pull/48
+- chore(deps): bump the dependencies group across 1 directory with 4 updates by @dependabot[bot] in https://github.com/k1LoW/go-github-actions/pull/50
+- chore(deps): bump google.golang.org/grpc from 1.82.1 to 1.83.2 by @dependabot[bot] in https://github.com/k1LoW/go-github-actions/pull/52
+- chore(deps): bump the dependencies group across 1 directory with 5 updates by @dependabot[bot] in https://github.com/k1LoW/go-github-actions/pull/56
+
 ## [v0.2.1](https://github.com/k1LoW/go-github-actions/compare/v0.2.0...v0.2.1) - 2026-03-19
 ### Other Changes
 - chore(deps): bump the dependencies group with 3 updates by @dependabot[bot] in https://github.com/k1LoW/go-github-actions/pull/15
