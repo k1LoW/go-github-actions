@@ -4,6 +4,8 @@ import (
 	"archive/zip"
 	"bytes"
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"errors"
 	"io"
 	"os"
@@ -14,41 +16,20 @@ import (
 	"github.com/k1LoW/go-github-actions/artifact/legacy"
 	apiv1 "github.com/k1LoW/go-github-actions/artifact/proto/gen/go/results/api/v1"
 	"github.com/lestrrat-go/jwx/v2/jwt"
+	"google.golang.org/protobuf/types/known/wrapperspb"
 )
 
 // Upload content as GitHub Actions artifact.
-func Upload(ctx context.Context, name, fp string, content io.Reader) error {
+func Upload(ctx context.Context, name, fp string, content io.Reader, opts ...Option) error {
+	c := newConfig(opts)
 	if useLegacy() {
+		if err := c.handleAttestError(errors.New("attestation is not supported with legacy artifact upload")); err != nil {
+			return err
+		}
 		return legacy.Upload(ctx, name, fp, content)
 	}
 
-	ids, err := getBackendIdsFromToken()
-	if err != nil {
-		return err
-	}
-	apic, err := newAPIClient()
-	if err != nil {
-		return err
-	}
-	req := connect.NewRequest(&apiv1.CreateArtifactRequest{
-		WorkflowRunBackendId:    ids.workflowRunBackendId,
-		WorkflowJobRunBackendId: ids.workflowJobRunBackendId,
-		Name:                    name,
-		Version:                 4,
-	})
-
-	res, err := apic.CreateArtifact(ctx, req)
-	if err != nil {
-		return err
-	}
-	if !res.Msg.GetOk() {
-		return errors.New("response is not ok")
-	}
-
-	var size int64
-	{
-		buf := new(bytes.Buffer)
-		zw := zip.NewWriter(buf)
+	return uploadZip(ctx, c, name, func(zw *zip.Writer) error {
 		h := &zip.FileHeader{
 			Name:   fp,
 			Method: zip.Deflate,
@@ -60,68 +41,21 @@ func Upload(ctx context.Context, name, fp string, content io.Reader) error {
 		if _, err := io.Copy(w, content); err != nil {
 			return err
 		}
-		if err := zw.Close(); err != nil {
-			return err
-		}
-		if err := upload(ctx, res.Msg.GetSignedUploadUrl(), buf); err != nil {
-			return err
-		}
-		size = int64(buf.Len())
-	}
-
-	{
-		req := connect.NewRequest(&apiv1.FinalizeArtifactRequest{
-			WorkflowRunBackendId:    ids.workflowRunBackendId,
-			WorkflowJobRunBackendId: ids.workflowJobRunBackendId,
-			Name:                    name,
-			Size:                    size,
-		})
-
-		res, err := apic.FinalizeArtifact(ctx, req)
-		if err != nil {
-			return err
-		}
-		if !res.Msg.GetOk() {
-			return errors.New("response is not ok")
-		}
-	}
-
-	return nil
+		return nil
+	})
 }
 
 // UploadFiles as GitHub Actions artifact.
-func UploadFiles(ctx context.Context, name string, files []string) error {
+func UploadFiles(ctx context.Context, name string, files []string, opts ...Option) error {
+	c := newConfig(opts)
 	if useLegacy() {
+		if err := c.handleAttestError(errors.New("attestation is not supported with legacy artifact upload")); err != nil {
+			return err
+		}
 		return legacy.UploadFiles(ctx, name, files)
 	}
 
-	ids, err := getBackendIdsFromToken()
-	if err != nil {
-		return err
-	}
-	apic, err := newAPIClient()
-	if err != nil {
-		return err
-	}
-	req := connect.NewRequest(&apiv1.CreateArtifactRequest{
-		WorkflowRunBackendId:    ids.workflowRunBackendId,
-		WorkflowJobRunBackendId: ids.workflowJobRunBackendId,
-		Name:                    name,
-		Version:                 4,
-	})
-
-	res, err := apic.CreateArtifact(ctx, req)
-	if err != nil {
-		return err
-	}
-	if !res.Msg.GetOk() {
-		return errors.New("response is not ok")
-	}
-
-	var size int64
-	{
-		buf := new(bytes.Buffer)
-		zw := zip.NewWriter(buf)
+	return uploadZip(ctx, c, name, func(zw *zip.Writer) error {
 		for _, fp := range files {
 			if err := func() error {
 				a, err := filepath.Abs(fp)
@@ -159,13 +93,53 @@ func UploadFiles(ctx context.Context, name string, files []string) error {
 				return err
 			}
 		}
-		if err := zw.Close(); err != nil {
-			return err
-		}
-		if err := upload(ctx, res.Msg.GetSignedUploadUrl(), buf); err != nil {
-			return err
-		}
-		size = int64(buf.Len())
+		return nil
+	})
+}
+
+func uploadZip(ctx context.Context, c *config, name string, write func(zw *zip.Writer) error) error {
+	ids, err := getBackendIdsFromToken()
+	if err != nil {
+		return err
+	}
+	apic, err := newAPIClient()
+	if err != nil {
+		return err
+	}
+	req := connect.NewRequest(&apiv1.CreateArtifactRequest{
+		WorkflowRunBackendId:    ids.workflowRunBackendId,
+		WorkflowJobRunBackendId: ids.workflowJobRunBackendId,
+		Name:                    name,
+		Version:                 4,
+	})
+
+	res, err := apic.CreateArtifact(ctx, req)
+	if err != nil {
+		return err
+	}
+	if !res.Msg.GetOk() {
+		return errors.New("response is not ok")
+	}
+
+	buf := new(bytes.Buffer)
+	zw := zip.NewWriter(buf)
+	if err := write(zw); err != nil {
+		return err
+	}
+	if err := zw.Close(); err != nil {
+		return err
+	}
+	// Read size and digest before uploading because uploading drains buf.
+	size := int64(buf.Len())
+	sum := sha256.Sum256(buf.Bytes())
+	digest := hex.EncodeToString(sum[:])
+	if err := upload(ctx, res.Msg.GetSignedUploadUrl(), buf); err != nil {
+		return err
+	}
+
+	// Attest before finalizing so that a failed required attestation does not leave a visible, unattested artifact.
+	if err := c.attest(ctx, name, map[string]string{"sha256": digest}); err != nil {
+		return err
 	}
 
 	{
@@ -174,6 +148,7 @@ func UploadFiles(ctx context.Context, name string, files []string) error {
 			WorkflowJobRunBackendId: ids.workflowJobRunBackendId,
 			Name:                    name,
 			Size:                    size,
+			Hash:                    wrapperspb.String("sha256:" + digest),
 		})
 
 		res, err := apic.FinalizeArtifact(ctx, req)

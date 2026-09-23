@@ -5,6 +5,8 @@ import (
 	"os"
 	"strings"
 	"testing"
+
+	"github.com/k1LoW/go-github-actions/attest"
 )
 
 func TestUpload(t *testing.T) {
@@ -37,6 +39,17 @@ func TestUploadFiles(t *testing.T) {
 		"testdata/test3.txt",
 	}
 	if err := UploadFiles(context.TODO(), "TestUploadFiles", files); err != nil {
+		t.Error(err)
+	}
+}
+
+func TestUploadWithAttestation(t *testing.T) {
+	if os.Getenv("ATTEST_E2E") == "" {
+		t.Skip("ATTEST_E2E is not set")
+	}
+	// The CI downloads this artifact as a zip and verifies it with `gh attestation verify`.
+	opt := WithAttestation(AttestRequired, attest.New())
+	if err := Upload(context.TODO(), "TestUploadWithAttestation", "artifact/testdata/attested.txt", strings.NewReader("hello attestation\n"), opt); err != nil {
 		t.Error(err)
 	}
 }
