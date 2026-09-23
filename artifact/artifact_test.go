@@ -81,13 +81,13 @@ func TestMimeType(t *testing.T) {
 		want string
 	}{
 		{"report.html", "text/html"},
+		{"report.txt", "text/plain"},
 		{"report.json", "application/json"},
 		{"report", "application/octet-stream"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// A prefix, since the system MIME tables can add parameters such as a charset.
-			if got := mimeType(tt.name); !strings.HasPrefix(got, tt.want) {
+			if got := mimeType(tt.name); got != tt.want {
 				t.Errorf("got %q, want %q", got, tt.want)
 			}
 		})

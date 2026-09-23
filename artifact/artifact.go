@@ -197,7 +197,9 @@ func uploadBlob(ctx context.Context, c *config, name, contentType string, b []by
 
 // mimeType returns the MIME type an artifact named after a file is served with.
 func mimeType(name string) string {
-	if t := mime.TypeByExtension(filepath.Ext(name)); t != "" {
+	// The backend rejects a MIME type with parameters, such as the charset the system MIME
+	// tables add to text types, so only the media type is sent.
+	if t, _, err := mime.ParseMediaType(mime.TypeByExtension(filepath.Ext(name))); err == nil {
 		return t
 	}
 	return "application/octet-stream"
