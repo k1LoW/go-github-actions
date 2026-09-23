@@ -79,6 +79,14 @@ jobs:
       - name: Test TestUploadFiles (3/3)
         run: cat artifact/testdata/test2.txt artifact/testdata/test3.txt
 
+      - name: Test TestUploadUnarchived (1/2)
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: TestUploadUnarchived.html
+
+      - name: Test TestUploadUnarchived (2/2)
+        run: grep -F '<title>hello artifact</title>' TestUploadUnarchived.html
+
       - name: Test TestUploadWithAttestation
         if: env.ATTEST_E2E == '1'
         run: |
