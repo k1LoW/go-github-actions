@@ -58,8 +58,12 @@ func newConfig(opts []Option) *config {
 }
 
 func (c *config) attest(ctx context.Context, name string, digest map[string]string) error {
-	if c.attestMode == AttestNone {
+	switch c.attestMode {
+	case AttestNone:
 		return nil
+	case AttestBestEffort, AttestRequired:
+	default:
+		return fmt.Errorf("unknown attest mode: %d", c.attestMode)
 	}
 	if c.attester == nil {
 		return c.handleAttestError(errors.New("no attester is set"))
@@ -77,6 +81,9 @@ func (c *config) handleAttestError(err error) error {
 	case AttestBestEffort:
 		// Returning nil silently would hide the failure, so surface it as a workflow warning annotation.
 		_, _ = fmt.Fprintf(c.stdout, "::warning::failed to attest artifact: %s\n", escapeData(err.Error()))
+	case AttestNone:
+	default:
+		return fmt.Errorf("unknown attest mode %d: %w", c.attestMode, err)
 	}
 	return nil
 }

@@ -39,6 +39,7 @@ func TestAttest(t *testing.T) {
 		{"required succeeds", AttestRequired, &fakeAttester{}, false, true, false},
 		{"required fails on failure", AttestRequired, &fakeAttester{err: errors.New("boom")}, true, true, false},
 		{"required fails without attester", AttestRequired, nil, true, false, false},
+		{"unknown mode fails without attesting", AttestMode(100), &fakeAttester{}, true, false, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -68,6 +69,13 @@ func TestAttest(t *testing.T) {
 				t.Errorf("got warning %q, want warning %v", stdout.String(), tt.wantWarning)
 			}
 		})
+	}
+}
+
+func TestHandleAttestErrorWithUnknownMode(t *testing.T) {
+	c := newConfig([]Option{WithAttestation(AttestMode(100), nil)})
+	if err := c.handleAttestError(errors.New("boom")); err == nil {
+		t.Error("want error")
 	}
 }
 
