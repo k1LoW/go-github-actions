@@ -1,5 +1,10 @@
 # Changelog
 
+## [v0.5.0](https://github.com/k1LoW/go-github-actions/compare/v0.4.0...v0.5.0) - 2026-09-24
+
+### Breaking Changes 🛠
+- feat: return the ID of the artifact that Upload and UploadFiles create by @k1LoW in https://github.com/k1LoW/go-github-actions/pull/60
+
 ## [v0.4.0](https://github.com/k1LoW/go-github-actions/compare/v0.3.0...v0.4.0) - 2026-09-23
 
 ### New Features 🎉
