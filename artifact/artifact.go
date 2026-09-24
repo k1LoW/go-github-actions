@@ -20,14 +20,15 @@ import (
 	"google.golang.org/protobuf/types/known/wrapperspb"
 )
 
-// Upload content as GitHub Actions artifact.
-func Upload(ctx context.Context, name, fp string, content io.Reader, opts ...Option) error {
+// Upload content as GitHub Actions artifact and returns the ID of the artifact.
+// The ID is 0 where artifacts are uploaded through the legacy API, which does not answer with it.
+func Upload(ctx context.Context, name, fp string, content io.Reader, opts ...Option) (int64, error) {
 	c := newConfig(opts)
 	if useLegacy() {
 		if err := c.handleAttestError(errors.New("attestation is not supported with legacy artifact upload")); err != nil {
-			return err
+			return 0, err
 		}
-		return legacy.Upload(ctx, name, fp, content)
+		return 0, legacy.Upload(ctx, name, fp, content)
 	}
 
 	return uploadZip(ctx, c, name, func(zw *zip.Writer) error {
@@ -46,14 +47,15 @@ func Upload(ctx context.Context, name, fp string, content io.Reader, opts ...Opt
 	})
 }
 
-// UploadFiles as GitHub Actions artifact.
-func UploadFiles(ctx context.Context, name string, files []string, opts ...Option) error {
+// UploadFiles as GitHub Actions artifact and returns the ID of the artifact.
+// The ID is 0 where artifacts are uploaded through the legacy API, which does not answer with it.
+func UploadFiles(ctx context.Context, name string, files []string, opts ...Option) (int64, error) {
 	c := newConfig(opts)
 	if useLegacy() {
 		if err := c.handleAttestError(errors.New("attestation is not supported with legacy artifact upload")); err != nil {
-			return err
+			return 0, err
 		}
-		return legacy.UploadFiles(ctx, name, files)
+		return 0, legacy.UploadFiles(ctx, name, files)
 	}
 
 	return uploadZip(ctx, c, name, func(zw *zip.Writer) error {
@@ -118,17 +120,16 @@ func UploadUnarchived(ctx context.Context, name string, content io.Reader, opts 
 	return uploadBlob(ctx, c, name, mimeType(name), b)
 }
 
-func uploadZip(ctx context.Context, c *config, name string, write func(zw *zip.Writer) error) error {
+func uploadZip(ctx context.Context, c *config, name string, write func(zw *zip.Writer) error) (int64, error) {
 	buf := new(bytes.Buffer)
 	zw := zip.NewWriter(buf)
 	if err := write(zw); err != nil {
-		return err
+		return 0, err
 	}
 	if err := zw.Close(); err != nil {
-		return err
+		return 0, err
 	}
-	_, err := uploadBlob(ctx, c, name, "", buf.Bytes())
-	return err
+	return uploadBlob(ctx, c, name, "", buf.Bytes())
 }
 
 // uploadBlob creates the artifact, uploads b as its content and finalizes it. An empty
