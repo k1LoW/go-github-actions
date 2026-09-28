@@ -1,5 +1,10 @@
 # Changelog
 
+## [v0.5.1](https://github.com/k1LoW/go-github-actions/compare/v0.5.0...v0.5.1) - 2026-09-28
+
+### Other Changes
+- ci: generate CREDITS with gocredits v1.0.0 from a make target by @k1LoW in https://github.com/k1LoW/go-github-actions/pull/63
+
 ## [v0.5.0](https://github.com/k1LoW/go-github-actions/compare/v0.4.0...v0.5.0) - 2026-09-24
 
 ### Breaking Changes 🛠
