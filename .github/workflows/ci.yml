@@ -30,7 +30,7 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Run lint
-        uses: reviewdog/action-golangci-lint@c76cceaaab89abe74e649d2e34c6c9adc26662d2 # v2.10.0
+        uses: reviewdog/action-golangci-lint@284129a3ac23bc5d8ac1522e0b6511df74a8836d # v2.10.2
         with:
           fail_level: warning
           go_version_file: go.mod
@@ -39,7 +39,7 @@ jobs:
         uses: ./testdata/
 
       - name: Test TestUpload (1/2)
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: TestUpload
 
@@ -47,7 +47,7 @@ jobs:
         run: cat artifact/testdata/test.txt
 
       - name: Test TestUploadLargeContent (1/2)
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: TestUploadLargeContent
 
@@ -72,7 +72,7 @@ jobs:
         run: rm artifact/testdata/test2.txt artifact/testdata/test3.txt
 
       - name: Test TestUploadFiles (2/3)
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: TestUploadFiles
 
@@ -80,7 +80,7 @@ jobs:
         run: cat artifact/testdata/test2.txt artifact/testdata/test3.txt
 
       - name: Test TestUploadUnarchived (1/2)
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: TestUploadUnarchived.html
 
