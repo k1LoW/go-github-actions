@@ -1,5 +1,12 @@
 # Changelog
 
+## [v0.5.1](https://github.com/k1LoW/go-github-actions/compare/v0.5.0...v0.5.1) - 2026-11-18
+
+### Other Changes
+- ci: generate CREDITS with gocredits v1.0.0 from a make target by @k1LoW in https://github.com/k1LoW/go-github-actions/pull/63
+- chore(deps): bump go.opentelemetry.io/otel/trace from 1.44.0 to 1.47.0 by @dependabot[bot] in https://github.com/k1LoW/go-github-actions/pull/71
+- chore(deps): bump github.com/go-jose/go-jose/v4 from 4.1.4 to 4.1.6 by @dependabot[bot] in https://github.com/k1LoW/go-github-actions/pull/70
+
 ## [v0.5.0](https://github.com/k1LoW/go-github-actions/compare/v0.4.0...v0.5.0) - 2026-09-24
 
 ### Breaking Changes 🛠
